@@ -53,7 +53,7 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
   const { ENSName } = useENSName(account ?? undefined);
   const { udDomain } = useUDDomain();
   const [openDetailMenu, setOpenDetailMenu] = useState(false);
-  const [showNewsletter, setShowNewsletter] = useState(true);
+  const [showNewsletter, setShowNewsletter] = useState(false);
 
   const theme = useTheme();
   const allTransactions = useAllTransactions();
@@ -132,7 +132,8 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
     if (!chainId) return '';
     if (chainId === ChainId.ZKTESTNET)
       return `&currency1=${USDT[chainId].address}`;
-    return `&currency1=${USDC[chainId].address}`;
+    if (USDC[chainId]) return `&currency1=${USDC[chainId].address}`;
+    return '';
   }, [chainId]);
 
   if (showSwap) {
@@ -149,7 +150,6 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
       id: 'perps-page-link',
       isExternal: true,
       externalLink: process?.env?.REACT_APP_PERPS_URL || '',
-      isNew: true,
       onClick: async () => {
         if (chainId !== ChainId.ZKEVM) {
           const zkEVMconfig = getConfig(ChainId.ZKEVM);
@@ -187,6 +187,7 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
     id: 'earn-tab',
     link: '/',
     items: [],
+    isNew: true,
   };
   if (showEarn) {
     menuItems.push(earnTab);
@@ -265,7 +266,7 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
       link: '/leader-board',
       text: 'Leaderboard',
       id: 'contest-page-link',
-      isNew: true,
+      isNew: false,
     });
   }
   if (showConvert) {

@@ -5,14 +5,20 @@ import { useHistory, useParams } from 'react-router-dom';
 import './index.scss';
 import { useIsV2 } from 'state/application/hooks';
 import { NEW_QUICK_ADDRESS } from 'constants/v3/addresses';
-import { useAnalyticsVersion } from 'hooks';
+import { useActiveWeb3React, useAnalyticsVersion } from 'hooks';
+import { getConfig } from 'config/index';
 
 const VersionToggle: React.FC = () => {
   const { t } = useTranslation();
-  const { isV2, updateIsV2 } = useIsV2();
+  const { chainId } = useActiveWeb3React();
+  const config = getConfig(chainId);
+  const lHAnalyticsAvailable = config['analytics']['liquidityHub'];
+  const singleTokenEnabled = config['ichi']['available'];
+  const { updateIsV2 } = useIsV2();
   const params: any = useParams();
   const history = useHistory();
   const isAnalyticsPage = history.location.pathname.includes('/analytics');
+  const isPoolPage = history.location.pathname.includes('/pools');
   const analyticsVersion = useAnalyticsVersion();
   const version =
     params && params.version
@@ -30,26 +36,30 @@ const VersionToggle: React.FC = () => {
     const versionParam = params ? params.version : undefined;
     const currencyIdAParam = params ? params.currencyIdA : undefined;
     const currencyIdBParam = params ? params.currencyIdB : undefined;
-    const redirectPathName = versionParam
-      ? history.location.pathname.replace('/' + versionParam, `/${version}`)
-      : history.location.pathname +
-        (history.location.pathname.includes('/add')
-          ? (currencyIdAParam ? '' : `/ETH`) +
-            (currencyIdBParam ? '' : `/${NEW_QUICK_ADDRESS}`)
-          : '') +
-        `${history.location.pathname.endsWith('/') ? '' : '/'}${version}`;
-    history.push(
-      redirectPathName +
-        (history.location.pathname.includes('/pools')
-          ? history.location.search
-          : ''),
-    );
+    if (versionParam !== version) {
+      const redirectPathName = versionParam
+        ? history.location.pathname.replace('/' + versionParam, `/${version}`)
+        : history.location.pathname +
+          (history.location.pathname.includes('/add')
+            ? (currencyIdAParam ? '' : `/ETH`) +
+              (currencyIdBParam ? '' : `/${NEW_QUICK_ADDRESS}`)
+            : '') +
+          `${history.location.pathname.endsWith('/') ? '' : '/'}${version}`;
+      history.push(
+        redirectPathName +
+          (version !== 'singleToken' &&
+          versionParam !== 'singleToken' &&
+          history.location.pathname.includes('/pools')
+            ? history.location.search
+            : ''),
+      );
+    }
   };
 
   return (
     <Box className='version-toggle-container'>
       <Box
-        className={isV2 && version !== 'total' ? 'version-toggle-active' : ''}
+        className={version === 'v2' ? 'version-toggle-active' : ''}
         onClick={() => {
           redirectWithVersion('v2');
         }}
@@ -58,7 +68,7 @@ const VersionToggle: React.FC = () => {
       </Box>
 
       <Box
-        className={!isV2 && version !== 'total' ? 'version-toggle-active' : ''}
+        className={version === 'v3' ? 'version-toggle-active' : ''}
         onClick={() => {
           redirectWithVersion('v3');
         }}
@@ -66,15 +76,40 @@ const VersionToggle: React.FC = () => {
         <small>{t('V3')}</small>
       </Box>
 
-      {isAnalyticsPage && (
+      {isPoolPage && singleTokenEnabled && (
         <Box
-          className={version === 'total' ? 'version-toggle-active' : ''}
+          className={version === 'singleToken' ? 'version-toggle-active' : ''}
           onClick={() => {
-            redirectWithVersion('total');
+            redirectWithVersion('singleToken');
           }}
         >
-          <small>{t('total')}</small>
+          <small>{t('singleToken')}</small>
         </Box>
+      )}
+
+      {isAnalyticsPage && (
+        <>
+          {lHAnalyticsAvailable && (
+            <Box
+              className={
+                version === 'liquidityhub' ? 'version-toggle-active' : ''
+              }
+              onClick={() => {
+                redirectWithVersion('liquidityhub');
+              }}
+            >
+              <small>{t('liquidityHub')}</small>
+            </Box>
+          )}
+          <Box
+            className={version === 'total' ? 'version-toggle-active' : ''}
+            onClick={() => {
+              redirectWithVersion('total');
+            }}
+          >
+            <small>{t('total')}</small>
+          </Box>
+        </>
       )}
     </Box>
   );
